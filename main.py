@@ -1,8 +1,13 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Any, Dict
 
-app = FastAPI()
+from database import create_document
+from schemas import ContactMessage
+
+app = FastAPI(title="Horae Médiation API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,11 +19,37 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello from FastAPI Backend!"}
+    return {"message": "Horae Médiation Backend en ligne"}
 
 @app.get("/api/hello")
 def hello():
-    return {"message": "Hello from the backend API!"}
+    return {"message": "Bienvenue sur l'API de Horae Médiation"}
+
+@app.get("/api/company")
+def company_info():
+    return {
+        "name": "Horae Médiation",
+        "tagline": "Médiation et résolution amiable des différends",
+        "location": "Paris, France",
+        "email": "contact@horae-mediation.fr",
+        "phone": "+33 1 23 45 67 89",
+        "languages": ["fr"],
+        "areas": [
+            "Médiation commerciale",
+            "Conflits entre associés",
+            "Droit du travail",
+            "Conflits de voisinage",
+            "Médiation familiale",
+        ],
+    }
+
+@app.post("/api/contact")
+def submit_contact(message: ContactMessage) -> Dict[str, Any]:
+    try:
+        doc_id = create_document("contactmessage", message)
+        return {"status": "ok", "id": doc_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/test")
 def test_database():
